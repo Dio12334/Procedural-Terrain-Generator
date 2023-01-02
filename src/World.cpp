@@ -3,12 +3,24 @@
 #include "../SimplexNoise/src/SimplexNoise.h"
 #include <cmath>
 #include <limits>
+#include <random>
+#include <iostream>
 
 namespace sim {
 	
 	void World::GenerateNewMap(){
+		GenerateSeed();
 		GenerateElevation();
 		GenerateTemperature();
+	}
+
+	World::SeedType World::getSeed(){
+		return seed;
+	}
+
+	void World::GenerateSeed(){
+		std::random_device rd;
+		seed = std::uniform_real_distribution<SeedType>(-10000, 10000)(rd);
 	}
 
 	void World::GenerateElevation(){
@@ -18,6 +30,7 @@ namespace sim {
 		float offset_z  = 0.05f;
 		float lacunarity    = 1.99f;
 		float persistance   = 0.5f;
+		
 
 		const SimplexNoise simplex(0.1/scale, 0.5f, lacunarity, persistance);
 		const int octaves = static_cast<int>(5 + std::log(scale));
@@ -30,7 +43,7 @@ namespace sim {
 			for(unsigned i = 0; i < WIDTH; ++i){
 				const float x = static_cast<float>(i - WIDTH/2.f + offset_x*scale);
 				
-				const float noise = simplex.fractal(octaves, x, y) + offset_z;
+				const float noise = simplex.fractal(octaves, x + seed, y + seed) + offset_z;
 				m_elevation_map[j][i] = noise;
 			}
 		}
@@ -41,6 +54,9 @@ namespace sim {
 			for(unsigned i = 0; i < WIDTH; ++i){
 				auto grey = (m_elevation_map[j][i] + 1.f)/2.f;
 				psx::img::Color greyScale(grey,grey,grey);
+				if(grey < 0.5f){
+					greyScale.r = greyScale.g = 0.f;
+				}
 				psx::img::SetPixelOnSurface(surface, i, j, greyScale.ToUint32());
 			}
 		}
@@ -50,6 +66,7 @@ namespace sim {
 	}
 
 	void World::GenerateTemperature(){
+
 		const auto HEIGHT = m_temperature_map.size();
 		const auto WIDTH = m_temperature_map[0].size();
 
@@ -58,6 +75,7 @@ namespace sim {
 	
 		float mint = std::numeric_limits<float>::max();
 		float maxt = std::numeric_limits<float>::lowest();
+
 		for(unsigned j = 0; j < HEIGHT; ++j){
 			auto distance_from_equator = DistanceFromEquatorNormalized(j);
 			auto distance_from_equator_squared = distance_from_equator * distance_from_equator;
@@ -78,6 +96,7 @@ namespace sim {
 			}	
 		}
 
+		std::cout << maxt << " " << mint << std::endl;
 		auto surface = psx::img::CreateBlankSurface(WIDTH, HEIGHT);
 
 		for(unsigned j = 0; j < HEIGHT; ++j){

@@ -12,15 +12,23 @@ namespace sim {
     class World{
         public:
             using Map = std::array<std::array<float, 812>, 406>;
+			using SeedType = float;
+            
+			void GenerateNewMap();
+			SeedType getSeed();
 
-            void GenerateNewMap();
         private:
+
+			SeedType seed;
+
             Map m_elevation_map;
             Map m_temperature_map;
             Map m_circulation_map;
             Map m_evapotranspiration_map;
             Map m_humidity_map;
             Map m_precipitation_map;
+
+			void GenerateSeed();
 
             void GenerateElevation();
             void GenerateTemperature();
