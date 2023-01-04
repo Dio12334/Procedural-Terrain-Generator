@@ -18,7 +18,7 @@ namespace sim {
 			SeedType getSeed();
 
         private:
-
+			const unsigned m_WIDTH = 812, m_HEIGHT = 406;
 			SeedType seed;
 
             Map m_elevation_map;
