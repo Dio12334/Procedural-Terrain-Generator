@@ -70,43 +70,41 @@ namespace sim {
 		const auto percentage_temperature_decline_per_km = 10.f/70.f;
 		const auto elevation_scale = 10.f;
 	
-		float mint = std::numeric_limits<float>::max();
-		float maxt = std::numeric_limits<float>::lowest();
+		auto TemperatureBasedOnLatitude = [](const float& latitude){
+			if(latitude < 1.f/6.f)
+				return 0.74;
+			else{
+				return -0.96*((latitude - 1.f/6.f)*(latitude - 1.f/6.f)) + 0.74;
+				}
+			};
 
 		for(unsigned j = 0; j < m_HEIGHT; ++j){
 			auto distance_from_equator = DistanceFromEquatorNormalized(j);
-			auto distance_from_equator_squared = distance_from_equator * distance_from_equator;
+
 			for(unsigned i = 0; i < m_WIDTH; ++i){
 				const auto elevation = m_elevation_map[j][i];
 				float elevation_above_sealevel_in_km = elevation*elevation_scale;
 				float elevation_based_temperature_decline = percentage_temperature_decline_per_km * elevation_above_sealevel_in_km;
-				float temperature = -0.67*distance_from_equator_squared + 0.74;
+				
+
+				float temperature = TemperatureBasedOnLatitude(distance_from_equator);
+
 				temperature = (temperature - 0.5f)*2.f;
 				temperature -= elevation > 0? elevation_based_temperature_decline : 0.1f;
 				temperature = std::clamp(temperature, -1.f, 1.f);
 				m_temperature_map[j][i] = temperature;
 
-				if(temperature > maxt){
-					maxt = temperature;
-				}
-				if(temperature < mint){
-					mint = temperature;
-				}
 			}	
 		}
 
-		std::cout << "Temperatures max min: " << maxt << " " << mint << std::endl;
 		auto surface = psx::img::CreateBlankSurface(m_WIDTH, m_HEIGHT);
-		float maximum_temperature = +45.f, minimum_temperature = -25.f;
-		float temperature_range = maximum_temperature - minimum_temperature;
+		/* float maximum_temperature = +45.f, minimum_temperature = -25.f; */
 		for(unsigned j = 0; j < m_HEIGHT; ++j){
 			for(unsigned i = 0; i < m_WIDTH; ++i){
 				auto grey = (m_temperature_map[j][i] +1.f)/(2.f);
 				psx::img::Color greyScale(grey, grey, grey);
-				std::cout << grey *temperature_range + minimum_temperature << " ";
 				psx::img::SetPixelOnSurface(surface, i, j, greyScale.ToUint32());
 			}
-			std::cout << '\n';
 		}
 
 		psx::img::SaveSurfaceAsPNG(surface, "Temperature");
@@ -145,9 +143,6 @@ namespace sim {
 		};
 
 		float range  = 1.f - sign(delta) * EQUATOR;
-		auto first_val = std::abs(delta)/range;
-		auto second_val = DistanceFromEquator(y)/(m_HEIGHT/2.f);
-		std::cout << first_val << " " << second_val << '\n';
-		return first_val;
+		return std::abs(delta)/range;
 	}
 }
