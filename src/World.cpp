@@ -26,23 +26,33 @@ namespace sim {
 
 	void World::GenerateElevation(){
 		float scale     = 40.f;
-		float offset_x  = 5.9f;
-		float offset_y  = 5.1f;
-		float offset_z  = 0.05f;
-		float lacunarity    = 1.99f;
-		float persistance   = 0.5f;
+		/* float offset_x  = 5.9f; */
+		/* float offset_y  = 5.1f; */
+		/* float offset_z  = 0.05f; */
+		/* float lacunarity    = 1.99f; */
+		/* float persistance   = 0.5f; */
 		
 
-		const SimplexNoise simplex(0.1/scale, 0.5f, lacunarity, persistance);
+		/* const SimplexNoise simplex(0.1/scale, 0.5f, lacunarity, persistance); */
+		const SimplexNoise simplex(1/400.f);
 		const int octaves = static_cast<int>(5 + std::log(scale));
-
+		
+		const float radius = m_WIDTH/(M_PI*2.f);
 
 		for(unsigned j = 0; j < m_HEIGHT; ++j){
-			const float y = static_cast<float>(j - m_HEIGHT/2.f + offset_y*scale);
+			/* const float Y = static_cast<float>(j - m_HEIGHT/2.f + offset_y*scale); */
 			for(unsigned i = 0; i < m_WIDTH; ++i){
-				const float x = static_cast<float>(i - m_WIDTH/2.f + offset_x*scale);
+				/* const float X = static_cast<float>(i - m_WIDTH/2.f + offset_x*scale); */
 				
-				const float noise = simplex.fractal(octaves, x + seed, y + seed) + offset_z;
+				float angle = i/radius;
+
+				float x = std::sin(angle)*radius;
+				float y = j;
+				float z = std::cos(angle)*radius;
+				
+				/* std::cout << M_2_PI << '\n'; */
+				/* std::cout << x << " " << y << " " << z << '\n'; */
+				const float noise = simplex.fractal(octaves, x + seed, y , z + seed);
 				m_elevation_map[j][i] = noise;
 			}
 		}
